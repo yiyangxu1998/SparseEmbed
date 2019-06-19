@@ -34,7 +34,6 @@ class Net(nn.Module):
 
         r = self.cos(x,y)
 
-        #print (r)
         return r
         # Let's have a softmax with 
     def forward_query_embed(self, x):
