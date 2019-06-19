@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import AmazonDataset as dataset
 
+# This is the network structure
 class Net(nn.Module):
     def __init__(self, embed_dim, vocab_size):
         super(Net, self).__init__()
