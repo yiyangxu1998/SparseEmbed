@@ -16,7 +16,7 @@ class Net(nn.Module):
         self.embed_dim = embed_dim
 
         self.embed1 = nn.Linear(in_features = vocab_size, out_features = embed_dim)
-        self.embed2 = nn.Linear(in_features = embed_dim, out_features = embed_dim)
+        # self.embed2 = nn.Linear(in_features = embed_dim, out_features = embed_dim)
         self.bn_x = nn.BatchNorm1d(num_features=embed_dim)
         self.bn_y = nn.BatchNorm1d(num_features=embed_dim)
         self.cos = nn.CosineSimilarity()
@@ -44,12 +44,91 @@ class Net(nn.Module):
         return x
     def forward_asin_embed(self, y):
         y = self.bn_y(self.embed1(y))
-        y = self.tanh(x)
+        y = self.tanh(y)
 
         return y
 
 def extend_hinge_loss (output, target):
     return - torch.sum(torch.mul(output, target))
+
+
+def precision_at_k(ground_truth_batch, predictions_batch, reduction='mean'):
+    """
+
+    :param ground_truth_batch:
+    :param predictions_batch:
+    :param reduction:
+    :return:
+    """
+    k_max = 5
+    _,  indices = torch.sort(predictions_batch, descending=True)
+    top_k = indices[:,:k_max]
+    top_k_in_ground_truth = torch.gather(ground_truth_batch, 1, top_k)
+    n = ground_truth_batch.shape[0]
+    if reduction == 'mean':
+        precision_5 = top_k_in_ground_truth[:, :5].gt(0).sum().item() / (5 * n)
+        precision_3 = top_k_in_ground_truth[:, :3].gt(0).sum().item() / (3 * n)
+        precision_1 = top_k_in_ground_truth[:, :1].gt(0).sum().item() / (1 * n)
+    elif reduction == 'sum':
+        precision_5 = top_k_in_ground_truth[:, :5].gt(0).sum().item() / (5)
+        precision_3 = top_k_in_ground_truth[:, :3].gt(0).sum().item() / (3)
+        precision_1 = top_k_in_ground_truth[:, :1].gt(0).sum().item() / (1)
+    else:
+        precision_5 = top_k_in_ground_truth[:, :5].gt(0).sum(1) / 5
+        precision_3 = top_k_in_ground_truth[:, :3].gt(0).sum(1) / 3
+        precision_1 = top_k_in_ground_truth[:, :1].gt(0).sum(1) / 1
+    return precision_1, precision_3, precision_5
+
+
+def evaluate(args, model, device, test_loader, iterate_all=False):
+    """
+
+    :param args:
+    :param model:
+    :param device:
+    :param test_loader:
+    :param iterate_all:
+    :return:
+    """
+    model.eval()
+    test_loss = 0.0
+    test_precision_1 = 0.0
+    test_precision_3 = 0.0
+    test_precision_5 = 0.0
+    batch_num_small = 50
+    batch_num = 0
+    for batch_idx, batch in enumerate(test_loader):
+        # print(batch)
+        data = torch.sparse.FloatTensor(torch.LongTensor(batch['feature_index']),
+                                        torch.Tensor(batch['feature_value']),
+                                        torch.Size([args.batch_size, model.feature_size])).to(device).to_dense()
+        target = torch.sparse.FloatTensor(torch.LongTensor(batch['label_index']),
+                                          torch.Tensor(batch['label_value']),
+                                          torch.Size([args.batch_size, model.label_size])).to(device).to_dense()
+        output = model(data)
+        # test_loss += nn.functional.binary_cross_entropy(output, target).item()
+        test_loss += extend_hinge_loss(output, target).item()
+        test_p1, test_p3, test_p5 = precision_at_k(target, output, 'mean')
+        test_precision_1 += test_p1
+        test_precision_3 += test_p3
+        test_precision_5 += test_p5
+        if (not iterate_all) and (batch_idx == batch_num_small - 1):
+            batch_num = batch_num_small
+            break
+        else:
+            batch_num = batch_idx + 1
+
+    test_loss = test_loss / batch_num
+    test_precision_1 = test_precision_1 / batch_num
+    test_precision_3 = test_precision_3 / batch_num
+    test_precision_5 = test_precision_5 / batch_num
+    if iterate_all:
+        print('**** Whole Test\tLoss: {:.6f}\tPrecision@1:{:.4f}\tPrecision@3:{:.4f}\tPrecision@5:{:.4f}'
+              .format(test_loss, test_precision_1, test_precision_3, test_precision_5))
+    else:
+        print('---- Sampled Test\tLoss: {:.6f}\tPrecision@1:{:.4f}\tPrecision@3:{:.4f}\tPrecision@5:{:.4f}'
+              .format(test_loss, test_precision_1, test_precision_3, test_precision_5))
+    return test_loss, test_precision_1, test_precision_3, test_precision_5
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -105,6 +184,7 @@ def test(args, model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
+
 
 def main():
     # Training settings
