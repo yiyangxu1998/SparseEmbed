@@ -4,9 +4,9 @@ import re
 import numpy
 import pickle
 import random
-# import nltk
-# from nltk import word_tokenize
-# from nltk.util import ngrams
+import nltk
+from nltk import word_tokenize
+from nltk.util import ngrams
 
 # test_file = '/home/cl67/workspace/se/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_test.data'
 #
@@ -118,11 +118,40 @@ def word_extraction(sentence):
     return cleaned_text
 
 
+# def trigram_extraction(sentence):
+#     trigrams = []
+#     length = len(sentence)
+#     for i in range(length-2):
+#         trigrams.append(sentence[i:i+3])
+#     return trigrams
+
 def trigram_extraction(sentence):
     trigrams = []
     length = len(sentence)
     for i in range(length-2):
-        trigrams.append(sentence[i:i+3])
+        trigrams.append((sentence[i:i+3], 'This is a character trigram')) # so some trigrams are not mixed with unigram
+    return trigrams
+
+
+def word_bigram_extraction(sentence):
+    """
+    Return a list of bigram pairs, each pair being a token that's later included in the vocabulary.
+    :param sentence:
+    :return:
+    """
+    token = nltk.word_tokenize(sentence)
+    bigrams = ngrams(token, 2)
+    return bigrams
+
+
+def word_trigram_extraction(sentence):
+    """
+    Return a list of bigram pairs, each pair being a token that's later included in the vocabulary.
+    :param sentence:
+    :return:
+    """
+    token = nltk.word_tokenize(sentence)
+    trigrams = ngrams(token, 3)
     return trigrams
 
 
@@ -165,6 +194,24 @@ def generate_trigram(allsentences):
     return trigrams
 
 
+def generate_word_bigram(allsentences):
+    word_bigrams = []
+    for sentence in allsentences:
+        tri = word_trigram_extraction(sentence)
+        word_bigrams.extend(tri)
+    word_trigrams = sorted(list(set(word_bigrams)))
+    return word_bigrams
+
+
+def generate_word_trigram(allsentences):
+    word_trigrams = []
+    for sentence in allsentences:
+        tri = word_trigram_extraction(sentence)
+        word_trigrams.extend(tri)
+    word_trigrams = sorted(list(set(word_trigrams)))
+    return word_trigrams
+
+
 def token_extraction(sentence):
     """
     This is for getting only the tokens features of a single sentence when writing the sparse file
@@ -174,8 +221,12 @@ def token_extraction(sentence):
     tokens = []
     words = word_extraction(sentence)
     trigrams = trigram_extraction(sentence)
+    word_trigrams = word_trigram_extraction(sentence)
+    word_bigrams = word_bigram_extraction(sentence)
     tokens.extend(words)
     tokens.extend(trigrams)
+    tokens.extend(word_bigrams)
+    tokens.extend(word_trigrams)
     return tokens
 
 
@@ -189,8 +240,12 @@ def generate_vocab(allsentences):
     vocab = []
     unigrams = generate_bow(allsentences)
     character_trigrams = generate_trigram(allsentences)
+    word_bigrams = generate_word_bigram(allsentences)
+    word_trigrams = generate_word_trigram(allsentences)
     vocab.extend(unigrams)
     vocab.extend(character_trigrams)
+    vocab.extend(word_bigrams)
+    vocab.extend(word_trigrams)
     vocab = sorted(vocab)
     return vocab
 

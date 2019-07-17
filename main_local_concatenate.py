@@ -89,6 +89,16 @@ def precision_at_k(ground_truth_batch, predictions_batch, reduction='mean'):
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
+    """
+
+    :param args:
+    :param model: A list of different models to train separately
+    :param device:
+    :param train_loader:
+    :param optimizer:
+    :param epoch:
+    :return:
+    """
     model.train()
 
     for batch_idx, batch in enumerate(train_loader):
@@ -330,6 +340,8 @@ parser.add_argument('--embed-dim-1', type=int, default=256, metavar='N',
                     help='The dimension of the Embedding vector')
 parser.add_argument('--embed-dim-2', type=int, default=10240, metavar='N',
                     help='The dimension of the second Embedding vector')
+parser.add_argument("--concatenate-num", type=int, default=1000, metavar='N',
+                    help='Num of concatenation to construct sparse embeddings')
 
 parser.add_argument('--save-model', action='store_true', default=False,
                     help='For Saving the current Model')
@@ -364,14 +376,20 @@ test_loader = torch.utils.data.DataLoader(
     dataset.test_dataset(args.test_file),
     batch_size=args.test_batch_size, shuffle=True, collate_fn=dataset.AmazonDataset_collate, drop_last=True)
 
-model = Net(embed_dim=args.embed_dim, vocab_size=args.vocab_size).to(device)
-optimizer = optim.Adam(model.parameters(), lr=args.lr)
+model_list = []
+for i in range(args.concatenate_num):
+    model = Net(embed_dim=args.embed_dim, vocab_size=args.vocab_size).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-for epoch in range(1, args.epochs + 1):
-    # train(args, model, device, train_loader, optimizer, epoch)
-    # test(args, model, device, test_loader)
-    test(args, model, device)
+    print("Testing and training for model %i" % (i+1))
+    for epoch in range(1, args.epochs + 1):
+        train(args, model, device, train_loader, optimizer, epoch)
+        # test(args, model, device, test_loader)
+        test(args, model, device)
 
+    model_list.append(model)
+
+# Then apply the list of models and get the sparse embedding
 
 
 #

@@ -4,9 +4,10 @@ import re
 import numpy
 import pickle
 import random
-# import nltk
-# from nltk import word_tokenize
-# from nltk.util import ngrams
+import nltk
+from nltk import word_tokenize
+from nltk.util import ngrams
+nltk.download('punkt')
 
 # test_file = '/home/cl67/workspace/se/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_test.data'
 #
@@ -55,54 +56,57 @@ import random
 
 # path original test data of query-title pair
 # test_file = 'https://yiyangxubucket.s3.amazonaws.com/summer2019/pythonfiles/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_test.data'
-test_file = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_test_data.txt'
+test_file = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_test_data.txt'
 
 # path original train data of query-title pair
-train_file = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_train_data.txt'
+train_file = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_train_data.txt'
 
-test_file_cleaned = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_test_cleaned_data.txt'
-train_file_cleaned = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_train_cleaned_data.txt'
+test_file_cleaned = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_test_cleaned_data.txt'
+train_file_cleaned = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_train_cleaned_data.txt'
 
 # path of vocabulary built
-vocab_file = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_vocab.txt'
+vocab_file = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/query_asin_vocab.txt'
 
 # path of all query-title pairs
 # for easy access when generating ground-false (no purchase), or easy access for checking existing pairs
-test_knn = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_kdd_pickle.txt'
+test_knn = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_kdd_pickle.txt'
 
-train_knn = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_kdd_pickle.txt'
-test_train_knn = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_train_kdd_pickle.txt'
+train_knn = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_kdd_pickle.txt'
+test_train_knn = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_train_kdd_pickle.txt'
 
 # path of query-word-vector-representation (dictionary) built
-test_qlist = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_qlist_pickle.txt'
+test_qlist = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_qlist_pickle.txt'
 
 # path of title-word-vector-representation (dictionary) built
-test_alist = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_alist_pickle.txt'
+test_alist = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_alist_pickle.txt'
 
-train_qlist = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_qlist_pickle.txt'
+train_qlist = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_qlist_pickle.txt'
 
-train_alist = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_alist_pickle.txt'
+train_alist = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_alist_pickle.txt'
 
-test_train_qlist = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_train_qlist_pickle.txt'
+test_train_qlist = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_train_qlist_pickle.txt'
 
-test_train_alist = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_train_alist_pickle.txt'
+test_train_alist = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_train_alist_pickle.txt'
 
 # the path to complete sparse testing data that matches torch.Dataset features
-test_file_sparse = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_sparse_data.txt'
+test_file_sparse = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_sparse_data.txt'
 
 # the path to complete sparse training data that matches torch.Dataset features
-train_file_sparse = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_sparse_data.txt'
+train_file_sparse = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_sparse_data.txt'
 
 # randomly generated non-query-title pairs
-test_random_non_query_title_pair = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_random_non_query_title_pairs.txt'
-train_random_non_query_title_pair = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_random_non_query_title_pairs.txt'
+test_random_non_query_title_pair = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_random_non_query_title_pairs.txt'
+train_random_non_query_title_pair = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_random_non_query_title_pairs.txt'
 
 # complete 1 and 0 labelled data
-test_file_sparse_whole = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_sparse_whole_data.txt'
+test_file_sparse_whole = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/test_sparse_whole_data.txt'
 
 # complete 1 and 0 labelled data
-train_file_sparse_whole = '/Users/yiyangxu/Library/Mobile Documents/com~apple~CloudDocs/Research/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_sparse_whole_data.txt'
+train_file_sparse_whole = '/home/yx48/Workspace/Amazon-Product-Search-Datasets/reviews_CDs_and_Vinyl_5.json.gz/train_sparse_whole_data.txt'
 
+
+def word2tuple(word):
+    return (word, 'This is a word unigram')
 
 # Extract word in a sentence to form a list without stop words
 def word_extraction(sentence):
@@ -118,11 +122,40 @@ def word_extraction(sentence):
     return cleaned_text
 
 
+# def trigram_extraction(sentence):
+#     trigrams = []
+#     length = len(sentence)
+#     for i in range(length-2):
+#         trigrams.append(sentence[i:i+3])
+#     return trigrams
+
 def trigram_extraction(sentence):
     trigrams = []
     length = len(sentence)
     for i in range(length-2):
-        trigrams.append(sentence[i:i+3])
+        trigrams.append((sentence[i:i+3], 'This is a character trigram')) # so some trigrams are not mixed with unigram
+    return trigrams
+
+
+def word_bigram_extraction(sentence):
+    """
+    Return a list of bigram pairs, each pair being a token that's later included in the vocabulary.
+    :param sentence:
+    :return:
+    """
+    token = nltk.word_tokenize(sentence)
+    bigrams = ngrams(token, 2)
+    return bigrams
+
+
+def word_trigram_extraction(sentence):
+    """
+    Return a list of bigram pairs, each pair being a token that's later included in the vocabulary.
+    :param sentence:
+    :return:
+    """
+    token = nltk.word_tokenize(sentence)
+    trigrams = ngrams(token, 3)
     return trigrams
 
 
@@ -165,6 +198,24 @@ def generate_trigram(allsentences):
     return trigrams
 
 
+def generate_word_bigram(allsentences):
+    word_bigrams = []
+    for sentence in allsentences:
+        tri = word_trigram_extraction(sentence)
+        word_bigrams.extend(tri)
+    word_trigrams = sorted(list(set(word_bigrams)))
+    return word_bigrams
+
+
+def generate_word_trigram(allsentences):
+    word_trigrams = []
+    for sentence in allsentences:
+        tri = word_trigram_extraction(sentence)
+        word_trigrams.extend(tri)
+    word_trigrams = sorted(list(set(word_trigrams)))
+    return word_trigrams
+
+
 def token_extraction(sentence):
     """
     This is for getting only the tokens features of a single sentence when writing the sparse file
@@ -174,8 +225,12 @@ def token_extraction(sentence):
     tokens = []
     words = word_extraction(sentence)
     trigrams = trigram_extraction(sentence)
+    word_trigrams = word_trigram_extraction(sentence)
+    word_bigrams = word_bigram_extraction(sentence)
     tokens.extend(words)
     tokens.extend(trigrams)
+    tokens.extend(word_bigrams)
+    tokens.extend(word_trigrams)
     return tokens
 
 
@@ -189,9 +244,22 @@ def generate_vocab(allsentences):
     vocab = []
     unigrams = generate_bow(allsentences)
     character_trigrams = generate_trigram(allsentences)
-    vocab.extend(unigrams)
-    vocab.extend(character_trigrams)
-    vocab = sorted(vocab)
+    word_bigrams = generate_word_bigram(allsentences)
+    word_trigrams = generate_word_trigram(allsentences)
+    # vocab.extend(unigrams)
+    # vocab.extend(character_trigrams)
+    # vocab.extend(word_bigrams)
+    # vocab.extend(word_trigrams)
+    vocab_string = []
+    vocab_string.extend(unigrams)
+    vocab_tuple = []
+    vocab_tuple.extend(character_trigrams)
+    vocab_tuple.extend(word_bigrams)
+    vocab_tuple.extend(word_trigrams)
+    vocab_string = sorted(vocab_string)
+    vocab_tuple = sorted(vocab_tuple)
+    vocab.extend(vocab_string)
+    vocab.extend(vocab_tuple)
     return vocab
 
 
@@ -231,6 +299,26 @@ def tokens2sparse(vocab, tokens):
                 else:
                     token_sparse[i] = 1
     return token_sparse
+
+
+# def tokens2sparse(vocab, tokens):
+#     """
+#     Given a String of words converts the String to continuous vector representation according to its token frequencies.
+#     :param vocab:
+#     :param tokens:
+#     :return:
+#     """
+#     token_sparse = {}
+#     size = len(vocab)
+#     for w in tokens:
+#         for i in range(size):
+#             token = vocab[i]
+#             if token == w:
+#                 if i in token_sparse:
+#                     token_sparse[i] += 1
+#                 else:
+#                     token_sparse[i] = 1
+#     return token_sparse
 
 
 def clear_up_data(old_path, new_path):
